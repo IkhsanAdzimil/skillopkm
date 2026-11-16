@@ -38,7 +38,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     // --- Export (shared, dilindungi rate limiter 10 request per menit) ---
-    Route::get('/export', [ExportController::class, 'export'])->name('export')->middleware('throttle:10,1');
+    Route::get('/export', [ExportController::class, 'export'])->name('export')->middleware(['role:admin', 'throttle:10,1']);
 
     // === ADMIN ROUTES ===
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {

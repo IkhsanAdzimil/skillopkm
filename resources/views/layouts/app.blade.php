@@ -340,10 +340,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link py-2 text-white" href="#" data-bs-toggle="modal" data-bs-target="#modalExport">
-                            <i class="bi bi-file-earmark-arrow-down-fill me-2"></i>Export Rekap
+                        <a class="nav-link py-2 text-white" href="{{ route('guru.dashboard') }}#sectionRiwayatMengajar">
+                            <i class="bi bi-clock-history me-2"></i>Riwayat Mengajar
                         </a>
                     </li>
+                   
                 @endif
             </ul>
 
@@ -424,10 +425,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#modalExport">
-                        <i class="bi bi-file-earmark-arrow-down-fill"></i>Export Rekap
+                    <a class="nav-link" href="{{ route('guru.dashboard') }}#sectionRiwayatMengajar">
+                        <i class="bi bi-clock-history"></i>Riwayat Mengajar
                     </a>
                 </li>
+
             @endif
             <li class="nav-item mt-2">
                 <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#modalProfil">
@@ -646,17 +648,6 @@
                                 @endforeach
                             </select>
                         </div>
-                    @else
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-secondary">Filter Sesi yang Diampu (Opsional)</label>
-                            <select class="form-select rounded-3" name="sesi_id">
-                                <option value="">— Semua Sesi Saya —</option>
-                                @foreach(auth()->user()->sesi()->with('sekolah')->get() as $sesiOpt)
-                                    <option value="{{ $sesiOpt->id }}">{{ $sesiOpt->sekolah?->nama_sekolah }} — {{ $sesiOpt->nama_sesi }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
                 </div>
                 <div class="modal-footer bg-light border-0 gap-2">
                     <button type="button" class="btn btn-skillo-outline" data-bs-dismiss="modal">Batal</button>
@@ -671,7 +662,7 @@
         </div>
     </div>
 </div>
-
+@endif
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
