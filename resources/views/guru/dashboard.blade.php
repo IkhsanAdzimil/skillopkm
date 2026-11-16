@@ -17,7 +17,8 @@
             Halo, {{ auth()->user()->name }}! 👋
         </h2>
         <p class="text-secondary small mb-0">
-            Kelola presensi rekan guru pengampu, absensi siswa, serta 2 catatan progres & sesi pengganti di seluruh sesi yang Anda ampu.
+            Kelola presensi rekan guru pengampu, absensi murid dan catatan riwayat mengajar anda
+            
         </p>
     </div>
 
@@ -346,9 +347,253 @@
             </div>
         </div>
     @endforeach
+{{-- ============================================================ --}}
+    {{-- LIST RIWAYAT MENGAJAR GURU & REKAP PERTEMUAN SESI --}}
+    {{-- ============================================================ --}}
+    <div class="card mt-5 mb-4 shadow-sm" id="sectionRiwayatMengajar">
+        <div class="card-header d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3"
+             style="background: linear-gradient(135deg, #070B1F 0%, #1e293b 100%); color: #ffffff;">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge rounded-pill text-dark fw-black px-2.5 py-1" style="background: var(--skillo-amber); font-size: 0.7rem;">
+                        <i class="bi bi-clock-history me-1"></i>RIWAYAT MENGAJAR GURU
+                    </span>
+                    <span class="text-white-50 small">Daftar pertemuan, kehadiran mengajar, & catatan murid</span>
+                </div>
+                <h5 class="fw-black mb-0 font-monsserat text-white" style="font-size: 1.2rem;">
+                    <i class="bi bi-list-check me-2 text-warning"></i>Daftar Riwayat Mengajar & Jurnal Sesi Saya
+                </h5>
+            </div>
 
-@endif
+            {{-- Tombol Cepat Pilih Periode --}}
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('guru.dashboard', ['tanggal' => $tanggal, 'sesi_id' => $selectedSesiId, 'riwayat_mulai' => now()->startOfWeek()->format('Y-m-d'), 'riwayat_akhir' => now()->endOfWeek()->format('Y-m-d')]) }}#sectionRiwayatMengajar"
+                   class="btn btn-sm btn-skillo-amber py-1.5 px-3">
+                    <i class="bi bi-calendar-week me-1"></i>Minggu Ini
+                </a>
+                <a href="{{ route('guru.dashboard', ['tanggal' => $tanggal, 'sesi_id' => $selectedSesiId, 'riwayat_mulai' => now()->startOfMonth()->format('Y-m-d'), 'riwayat_akhir' => now()->endOfMonth()->format('Y-m-d')]) }}#sectionRiwayatMengajar"
+                   class="btn btn-sm btn-outline-light rounded-pill py-1.5 px-3 fw-bold">
+                    <i class="bi bi-calendar-month me-1"></i>Bulan Ini
+                </a>
+                <a href="{{ route('guru.dashboard', ['tanggal' => $tanggal, 'sesi_id' => $selectedSesiId, 'riwayat_mulai' => now()->subMonth()->startOfMonth()->format('Y-m-d'), 'riwayat_akhir' => now()->subMonth()->endOfMonth()->format('Y-m-d')]) }}#sectionRiwayatMengajar"
+                   class="btn btn-sm btn-outline-light rounded-pill py-1.5 px-3 fw-bold">
+                    <i class="bi bi-arrow-left-circle me-1"></i>Bulan Lalu
+                </a>
+            </div>
+        </div>
 
+        {{-- Filter Rentang Tanggal & Sesi --}}
+        <div class="p-3 px-4 border-bottom" style="background: #fff9e8;">
+            <form action="{{ route('guru.dashboard') }}#sectionRiwayatMengajar" method="GET" class="row g-2 align-items-end">
+                <input type="hidden" name="tanggal" value="{{ $tanggal }}">
+                <input type="hidden" name="sesi_id" value="{{ $selectedSesiId }}">
+
+                <div class="col-6 col-md-3">
+                    <label class="form-label fw-bold small text-secondary mb-1">Dari Tanggal</label>
+                    <input type="date" name="riwayat_mulai" value="{{ $riwayatMulai }}" class="form-control form-control-sm rounded-3 bg-white fw-semibold">
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label fw-bold small text-secondary mb-1">Sampai Tanggal</label>
+                    <input type="date" name="riwayat_akhir" value="{{ $riwayatAkhir }}" class="form-control form-control-sm rounded-3 bg-white fw-semibold">
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label fw-bold small text-secondary mb-1">Filter Sesi</label>
+                    <select name="riwayat_sesi_id" class="form-select form-select-sm rounded-3 bg-white fw-semibold">
+                        <option value="">— Semua Sesi Saya —</option>
+                        @foreach($daftarSesi as $optS)
+                            <option value="{{ $optS->id }}" {{ (string)$riwayatSesiId === (string)$optS->id ? 'selected' : '' }}>
+                                {{ $optS->sekolah?->nama_sekolah }} — {{ $optS->nama_sesi }} {{ $optS->tingkatan ? '(' . $optS->tingkatan . ')' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-skillo-primary w-100 py-1.5">
+                        <i class="bi bi-search me-1"></i>Tampilkan
+                    </button>
+                    <a href="{{ route('guru.dashboard', ['tanggal' => $tanggal, 'sesi_id' => $selectedSesiId]) }}#sectionRiwayatMengajar"
+                       class="btn btn-sm btn-skillo-outline py-1.5 px-2.5" title="Reset Filter">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {{-- Ringkasan Angka & Kolom Cari Cepat --}}
+        <div class="p-3 px-4 border-bottom bg-light d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="badge rounded-pill bg-dark text-white px-3 py-1.5 fw-bold">
+                    <i class="bi bi-journal-check me-1 text-warning"></i>{{ $riwayatStats['total_pertemuan'] }} Pertemuan
+                </span>
+                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1.5 fw-bold">
+                    Hadir Mengajar: {{ $riwayatStats['guru_hadir'] }}x
+                </span>
+                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-1.5 fw-bold">
+                    Tidak Hadir: {{ $riwayatStats['guru_tidak_hadir'] }}x
+                </span>
+                <span class="badge rounded-pill bg-white text-dark border px-3 py-1.5 fw-bold">
+                    <i class="bi bi-chat-left-text-fill me-1 text-primary"></i>{{ $riwayatStats['total_catatan'] }} Catatan Murid
+                </span>
+            </div>
+
+            <div class="input-group input-group-sm" style="max-width: 300px;">
+                <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 rounded-end-pill"
+                       placeholder="Cari sekolah, sesi, materi..." oninput="filterRiwayatGuru(this.value)">
+            </div>
+        </div>
+
+        {{-- Tabel List Riwayat Mengajar --}}
+        <div class="card-body p-0">
+            @if($riwayatPertemuanList->isEmpty())
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-journal-x fs-1 text-secondary opacity-50"></i>
+                    <p class="mt-2 fw-semibold mb-1">
+                        Belum ada riwayat mengajar pada periode {{ \Carbon\Carbon::parse($riwayatMulai)->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($riwayatAkhir)->format('d/m/Y') }}.
+                    </p>
+                    <small class="text-muted">Ubah rentang tanggal di atas atau klik tombol Bulan Lalu untuk melihat riwayat sebelumnya.</small>
+                </div>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="tabelRiwayatGuru">
+                        <thead class="bg-light" style="border-bottom: 2px solid #f1f5f9;">
+                            <tr class="text-secondary small fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                                <th class="px-3 py-3" style="width: 4%;">No</th>
+                                <th class="py-3" style="width: 13%;">Tanggal</th>
+                                <th class="py-3" style="width: 20%;">Sekolah & Sesi</th>
+                                <th class="py-3" style="width: 22%;">Materi Pembelajaran</th>
+                                <th class="py-3" style="width: 17%;">Kehadiran Guru</th>
+                                <th class="py-3 text-center" style="width: 12%;">Rekap Murid</th>
+                                <th class="px-3 py-3 text-end" style="width: 12%;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($riwayatPertemuanList as $idx => $pt)
+                                @php
+                                    $guruAbsMap = $pt->absensiGuru->keyBy('guru_id');
+                                    $cHadir     = $pt->absensiSiswa->where('status', 'hadir')->count();
+                                    $cSakit     = $pt->absensiSiswa->where('status', 'sakit')->count();
+                                    $cIzin      = $pt->absensiSiswa->where('status', 'izin')->count();
+                                    $cAlfa      = $pt->absensiSiswa->where('status', 'alfa')->count();
+                                    $courseMap  = $pt->sesi ? $pt->sesi->siswa->pluck('pivot.course', 'id') : collect();
+                                @endphp
+                                <tr class="baris-riwayat-guru">
+                                    <td class="px-3 fw-bold text-muted small">{{ $idx + 1 }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark small">{{ \Carbon\Carbon::parse($pt->tanggal)->format('d/m/Y') }}</div>
+                                        <small class="text-muted">{{ \Carbon\Carbon::parse($pt->tanggal)->translatedFormat('l') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark small">{{ $pt->sesi?->sekolah?->nama_sekolah ?? '-' }}</div>
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.68rem;">
+                                                {{ $pt->sesi?->nama_sesi }}
+                                            </span>
+                                            @if(!empty($pt->sesi?->tingkatan))
+                                                <span class="badge rounded-pill bg-warning-subtle text-dark border border-warning-subtle" style="font-size: 0.68rem;">
+                                                    {{ $pt->sesi->tingkatan }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="small {{ !empty($pt->materi) ? 'fw-semibold text-dark' : 'text-muted fst-italic' }}">
+                                            {{ $pt->materi ?: 'Belum diisi' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            @foreach($pt->sesi?->guru ?? [] as $g)
+                                                @php $stG = $guruAbsMap[$g->id]->status ?? 'hadir'; @endphp
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <span class="badge rounded-pill {{ $stG === 'hadir' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' }}"
+                                                          style="font-size: 0.65rem;">
+                                                        {{ $stG === 'hadir' ? 'Hadir' : 'Tidak Hadir' }}
+                                                    </span>
+                                                    <span class="small {{ $g->id === auth()->id() ? 'fw-bold text-dark' : 'text-secondary' }}" style="font-size: 0.76rem;">
+                                                        {{ $g->name }}
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-inline-flex flex-wrap gap-1 justify-content-center">
+                                            <span class="badge bg-success-subtle text-success border">H:{{ $cHadir }}</span>
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border">S:{{ $cSakit }}</span>
+                                            <span class="badge bg-info-subtle text-info-emphasis border">I:{{ $cIzin }}</span>
+                                            <span class="badge bg-danger-subtle text-danger border">A:{{ $cAlfa }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 text-end">
+                                        <div class="d-inline-flex gap-1">
+                                            <button class="btn btn-sm btn-skillo-outline py-1 px-2.5" type="button"
+                                                    data-bs-toggle="collapse" data-bs-target="#detailPertemuan{{ $pt->id }}"
+                                                    title="Lihat Detail Absensi & Catatan Murid">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                            <a href="{{ route('guru.dashboard', ['tanggal' => $pt->tanggal, 'sesi_id' => $pt->sesi_id]) }}"
+                                               class="btn btn-sm btn-skillo-dark py-1 px-2.5"
+                                               title="Buka & Edit Jurnal Tanggal Ini">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                {{-- Baris Collapse Detail Murid (Muncul Saat Tombol Mata Diklik) --}}
+                                <tr class="collapse bg-light" id="detailPertemuan{{ $pt->id }}">
+                                    <td colspan="7" class="p-3 px-4">
+                                        <div class="bg-white p-3 rounded-4 border shadow-xs">
+                                            <div class="fw-bold text-dark small mb-2 pb-2 border-bottom">
+                                                <i class="bi bi-people-fill text-danger me-1"></i>
+                                                Detail Murid — {{ $pt->sesi?->sekolah?->nama_sekolah }} ({{ $pt->sesi?->nama_sesi }}) — {{ \Carbon\Carbon::parse($pt->tanggal)->translatedFormat('l, d F Y') }}
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle mb-0 small">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th style="width: 5%;">No</th>
+                                                            <th style="width: 25%;">Murid</th>
+                                                            <th style="width: 15%;">Course</th>
+                                                            <th style="width: 12%;" class="text-center">Status</th>
+                                                            <th style="width: 21%;">Catatan 1</th>
+                                                            <th style="width: 22%;">Catatan 2</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($pt->absensiSiswa as $noAbs => $absSiswa)
+                                                            <tr>
+                                                                <td>{{ $noAbs + 1 }}</td>
+                                                                <td class="fw-semibold">{{ $absSiswa->siswa?->nama ?? '-' }}</td>
+                                                                <td>{{ $courseMap[$absSiswa->siswa_id] ?? $pt->sesi?->tingkatan ?? '-' }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="status-{{ $absSiswa->status }} text-uppercase">{{ $absSiswa->status }}</span>
+                                                                </td>
+                                                                <td>{{ $absSiswa->notes_1 ?: '—' }}</td>
+                                                                <td>{{ $absSiswa->notes_2 ?: '—' }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="6" class="text-center text-muted py-2">Belum ada detail absensi murid.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
 @endsection
 
 @push('scripts')
@@ -418,5 +663,12 @@
             }
         });
     });
+    function filterRiwayatGuru(keyword) {
+        const q = (keyword || '').toLowerCase().trim();
+        document.querySelectorAll('#tabelRiwayatGuru tbody tr.baris-riwayat-guru').forEach(function(row) {
+            const match = q === '' || row.innerText.toLowerCase().includes(q);
+            row.style.display = match ? '' : 'none';
+        });
+    }
 </script>
 @endpush

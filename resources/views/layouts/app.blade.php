@@ -305,8 +305,8 @@
             <span class="fs-4 fw-black text-white" style="font-family: 'Montserrat', sans-serif; letter-spacing: 0.5px;">
                 SKILLO <span style="color: var(--skillo-primary);">ACADEMY</span>
             </span>
-            <span class="badge rounded-pill bg-amber-300 text-dark fw-bold ms-2 px-2.5 py-1 badge-portal-staf" style="font-size: 0.65rem; letter-spacing: 0.5px;">
-                PORTAL STAF
+            <span class="badge rounded-pill bg-amber-300 text-light fw-bold ms-2 px-2.5 py-1 badge-portal-staf" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                PORTAL STAFF
             </span>
         </a>
 
@@ -436,11 +436,7 @@
             </li>
         </ul>
 
-        <div class="mt-auto pt-4 ps-2 border-top mt-4">
-            <span class="skillo-tag" style="font-size: 0.65rem;">
-                <i class="bi bi-shield-check"></i>Skillo Security v2.1
-            </span>
-        </div>
+        
     </div>
 
     <!-- CONTENT -->

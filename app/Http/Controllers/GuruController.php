@@ -16,7 +16,7 @@ class GuruController extends Controller
     {
         $guru = auth()->user();
 
-        // Ambil seluruh sesi yang diampu oleh guru ini (beserta sekolah, rekan guru pengampu, dan murid per sesi)
+        // Ambil seluruh sesi yang diampu oleh guru ini
         $daftarSesi = $guru->sesi()
             ->with([
                 'sekolah',
@@ -27,7 +27,7 @@ class GuruController extends Controller
             ->orderBy('id')
             ->get();
 
-        // Validasi input tanggal
+        // Validasi input tanggal untuk form jurnal harian
         $rawTanggal = $request->query('tanggal');
         try {
             $tanggal = $rawTanggal ? Carbon::parse($rawTanggal)->format('Y-m-d') : now()->format('Y-m-d');
@@ -35,8 +35,7 @@ class GuruController extends Controller
             $tanggal = now()->format('Y-m-d');
         }
 
-        // Filter sesi: default 'semua' agar guru bisa melihat seluruh sesi yang diampu sekaligus,
-        // atau memilih 1 sesi spesifik dari dropdown
+        // Filter sesi untuk form jurnal harian
         $selectedSesiId = $request->query('sesi_id', 'semua');
 
         if ($selectedSesiId !== 'semua' && is_numeric($selectedSesiId)) {
@@ -65,6 +64,72 @@ class GuruController extends Controller
             $absensiGuruMap[$s->id]  = $pertemuan ? $pertemuan->absensiGuru->keyBy('guru_id') : collect();
         }
 
+        // === MULAI TAMBAHAN: LIST RIWAYAT MENGAJAR GURU ===
+        try {
+            $riwayatMulai = $request->filled('riwayat_mulai')
+                ? Carbon::parse($request->query('riwayat_mulai'))->format('Y-m-d')
+                : now()->startOfMonth()->format('Y-m-d');
+        } catch (\Exception $e) {
+            $riwayatMulai = now()->startOfMonth()->format('Y-m-d');
+        }
+
+        try {
+            $riwayatAkhir = $request->filled('riwayat_akhir')
+                ? Carbon::parse($request->query('riwayat_akhir'))->format('Y-m-d')
+                : now()->endOfMonth()->format('Y-m-d');
+        } catch (\Exception $e) {
+            $riwayatAkhir = now()->endOfMonth()->format('Y-m-d');
+        }
+
+        $riwayatSesiId = $request->query('riwayat_sesi_id', '');
+        $sesiIdsGuru   = $daftarSesi->pluck('id');
+
+        $riwayatQuery = Pertemuan::with([
+            'sesi.sekolah',
+            'sesi.guru',
+            'sesi.siswa',
+            'absensiGuru.guru',
+            'absensiSiswa.siswa',
+        ])->where(function ($q) use ($sesiIdsGuru, $guru) {
+            $q->whereIn('sesi_id', $sesiIdsGuru)
+              ->orWhereHas('absensiGuru', fn($ag) => $ag->where('guru_id', $guru->id));
+        })->whereBetween('tanggal', [$riwayatMulai, $riwayatAkhir]);
+
+        if (!empty($riwayatSesiId) && is_numeric($riwayatSesiId)) {
+            $riwayatQuery->where('sesi_id', (int) $riwayatSesiId);
+        }
+
+        $riwayatPertemuanList = $riwayatQuery
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        // Statistik ringkas riwayat mengajar pada periode terpilih
+        $riwayatStats = [
+            'total_pertemuan'  => $riwayatPertemuanList->count(),
+            'guru_hadir'       => 0,
+            'guru_tidak_hadir' => 0,
+            'total_catatan'    => 0,
+        ];
+
+       foreach ($riwayatPertemuanList as $pt) {
+            $recGuruSaya = $pt->absensiGuru->firstWhere('guru_id', $guru->id);
+            $statusSaya  = $recGuruSaya ? $recGuruSaya->status : 'hadir';
+
+            if ($statusSaya === 'hadir') {
+                $riwayatStats['guru_hadir']++;
+            } else {
+                $riwayatStats['guru_tidak_hadir']++;
+            }
+
+            foreach ($pt->absensiSiswa as $abs) {
+                if (!empty($abs->notes_1) || !empty($abs->notes_2)) {
+                    $riwayatStats['total_catatan']++;
+                }
+            } // <-- 1. Tutup foreach ($pt->absensiSiswa)
+        } // <-- 2. Tutup foreach ($riwayatPertemuanList)
+        // JANGAN ADA '}' LAGI DI SINI! Langsung masuk ke return view:
+
         return view('guru.dashboard', compact(
             'daftarSesi',
             'sesiDitampilkan',
@@ -72,9 +137,14 @@ class GuruController extends Controller
             'tanggal',
             'pertemuanMap',
             'absensiSiswaMap',
-            'absensiGuruMap'
+            'absensiGuruMap',
+            'riwayatMulai',
+            'riwayatAkhir',
+            'riwayatSesiId',
+            'riwayatPertemuanList',
+            'riwayatStats'
         ));
-    }
+    } // <-- 3. Baru tutup public function dashboard() di sini (tepat di atas public function simpanAbsensi)
 
     public function simpanAbsensi(Request $request)
     {
@@ -226,4 +296,5 @@ class GuruController extends Controller
             'success' => true,
         ]);
     }
+
 }
